@@ -22,6 +22,7 @@ module waliors::waliors {
         id: UID,
         name: String,
         identity_blob_id: String,
+        image_blob_id: String,
         generation: u64,
     }
 
@@ -50,6 +51,7 @@ module waliors::waliors {
         id: ID,
         name: String,
         identity_blob_id: String,
+        image_blob_id: String,
         owner: address,
         timestamp: u64
     }
@@ -74,7 +76,7 @@ module waliors::waliors {
 
         let values = vector[
             utf8(b"WALior: {name}"),
-            utf8(b"https://apilink.com/waliorimg/"),
+            utf8(b"https://aggregator.walrus-testnet.walrus.space/v1/blobs/{image_blob_id}"),
             utf8(b"Avatar in the WALiors game prototype for the Haulout hackathon."),
             utf8(b"@leonyon.sui")
         ];
@@ -121,6 +123,7 @@ module waliors::waliors {
         registry: &mut WALiorRegistry,
         name: String,
         identity_blob_id: String,
+        image_blob_id: String,
         receiver: address,
         clock: &Clock,
         ctx: &mut TxContext
@@ -131,6 +134,7 @@ module waliors::waliors {
             id: object::new(ctx),
             name: name,
             identity_blob_id: identity_blob_id,
+            image_blob_id: image_blob_id,
             generation: 1
         };
         let walior_id = object::id(&walior);
@@ -151,6 +155,7 @@ module waliors::waliors {
             id: walior_id,
             name: walior.name,
             identity_blob_id: walior.identity_blob_id,
+            image_blob_id: walior.image_blob_id,
             owner: receiver,
             timestamp: timestamp_ms(clock)
         });

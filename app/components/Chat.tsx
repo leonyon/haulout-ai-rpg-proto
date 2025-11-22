@@ -6,6 +6,7 @@ interface ChatProps {
     waliorId: string;
     identityBlobId: string;
     name: string;
+    imageUrl?: string;
     onClose: () => void;
 }
 
@@ -14,7 +15,7 @@ interface Message {
     content: string;
 }
 
-export function Chat({ waliorId, identityBlobId, name, onClose }: ChatProps) {
+export function Chat({ waliorId, identityBlobId, name, imageUrl, onClose }: ChatProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -158,7 +159,20 @@ export function Chat({ waliorId, identityBlobId, name, onClose }: ChatProps) {
     return (
         <div className="flex flex-col h-[600px] bg-white dark:bg-zinc-900 rounded-lg shadow-lg overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
-                <h2 className="text-lg font-semibold">{name}</h2>
+                <div className="flex items-center gap-3">
+                    {imageUrl ? (
+                        <img 
+                            src={imageUrl} 
+                            alt={name} 
+                            className="w-10 h-10 rounded-full object-cover bg-zinc-200 dark:bg-zinc-800" 
+                        />
+                    ) : (
+                        <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-lg">
+                            👾
+                        </div>
+                    )}
+                    <h2 className="text-lg font-semibold">{name}</h2>
+                </div>
                 <button 
                     onClick={handleClose}
                     className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"

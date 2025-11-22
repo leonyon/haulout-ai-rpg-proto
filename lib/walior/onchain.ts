@@ -10,6 +10,7 @@ interface WaliorGraphNode {
             json: {
                 name?: string;
                 identity_blob_id?: string;
+                image_blob_id?: string;
             };
         } | null;
     } | null;
@@ -87,11 +88,20 @@ export async function fetchWaliorObjects(
                 ? payload.name
                 : moveObject.address;
 
+            const imageBlobId = typeof payload.image_blob_id === 'string'
+                ? payload.image_blob_id
+                : '';
+
+            const imageUrl = imageBlobId 
+                ? `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${imageBlobId}`
+                : undefined;
+
             return {
                 objectId: moveObject.address,
                 identityBlobId: identity,
                 name,
                 owner: trimmedOwner,
+                imageUrl,
             };
         });
 }

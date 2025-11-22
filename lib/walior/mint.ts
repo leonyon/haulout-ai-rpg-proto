@@ -3,6 +3,7 @@ import { executeOwnerTransaction } from '@/lib/transactions';
 
 interface MintWaliorOptions {
     identityBlobId: string;
+    imageBlobId: string;
     receiver: string;
     name: string;
 }
@@ -25,6 +26,10 @@ export async function mintWalior(options: MintWaliorOptions): Promise<MintWalior
         throw new Error('identityBlobId is required to mint a WALior.');
     }
 
+    if (!options.imageBlobId || options.imageBlobId.trim().length === 0) {
+        throw new Error('imageBlobId is required to mint a WALior.');
+    }
+
     if (!options.receiver || options.receiver.trim().length === 0) {
         throw new Error('receiver address is required.');
     }
@@ -39,7 +44,7 @@ export async function mintWalior(options: MintWaliorOptions): Promise<MintWalior
 
     const tx = new Transaction();
 
-    // public fun mint_to_address(auth: &mut WALiorAdminAuth, registry: &mut WALiorRegistry, name: String, identity_blob_id: String, receiver: address, clock: &Clock, ctx: &mut TxContext)
+    // public fun mint_to_address(auth: &mut WALiorAdminAuth, registry: &mut WALiorRegistry, name: String, identity_blob_id: String, image_blob_id: String, receiver: address, clock: &Clock, ctx: &mut TxContext)
     tx.moveCall({
         target: `${packageId}::waliors::mint_to_address`,
         arguments: [
@@ -47,6 +52,7 @@ export async function mintWalior(options: MintWaliorOptions): Promise<MintWalior
             tx.object(registryId),
             tx.pure.string(waliorName),
             tx.pure.string(options.identityBlobId.trim()),
+            tx.pure.string(options.imageBlobId.trim()),
             tx.pure.address(options.receiver.trim()),
             tx.object('0x6'), // Clock
         ],

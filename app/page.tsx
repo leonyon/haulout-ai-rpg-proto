@@ -9,6 +9,7 @@ interface Walior {
     name: string;
     identityBlobId: string;
     owner: string;
+    imageUrl?: string;
 }
 
 export default function Home() {
@@ -104,7 +105,9 @@ export default function Home() {
                             }
 
                             // Also trigger a background fetch to sync up eventually
-                            fetchWaliors();
+                            setTimeout(() => {
+                                fetchWaliors();
+                            }, 2000);
                             setMinting(false);
                             return;
                         } else if (update.status && update.message) {
@@ -141,6 +144,7 @@ export default function Home() {
                                 waliorId={selectedWalior.objectId}
                                 identityBlobId={selectedWalior.identityBlobId}
                                 name={selectedWalior.name}
+                                imageUrl={selectedWalior.imageUrl}
                                 onClose={() => setSelectedWalior(null)}
                             />
                         ) : (
@@ -187,14 +191,27 @@ export default function Home() {
                                                 key={walior.objectId}
                                                 onClick={() => !minting && setSelectedWalior(walior)}
                                                 disabled={minting}
-                                                className="flex flex-col text-left p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-blue-500 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="flex flex-row items-center gap-4 text-left p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-blue-500 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                <span className="text-lg font-medium group-hover:text-blue-600 mb-2">
-                                                    {walior.name}
-                                                </span>
-                                                <span className="text-xs font-mono text-zinc-500 truncate w-full">
-                                                    ID: {walior.objectId}
-                                                </span>
+                                                {walior.imageUrl ? (
+                                                    <img 
+                                                        src={walior.imageUrl} 
+                                                        alt={walior.name} 
+                                                        className="w-16 h-16 rounded-full object-cover bg-zinc-200 dark:bg-zinc-800"
+                                                    />
+                                                ) : (
+                                                    <div className="w-16 h-16 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-2xl">
+                                                        👾
+                                                    </div>
+                                                )}
+                                                <div className="flex flex-col flex-1 min-w-0">
+                                                    <span className="text-lg font-medium group-hover:text-blue-600 mb-2 truncate">
+                                                        {walior.name}
+                                                    </span>
+                                                    <span className="text-xs font-mono text-zinc-500 truncate w-full">
+                                                        ID: {walior.objectId}
+                                                    </span>
+                                                </div>
                                             </button>
                                         ))}
                                     </div>

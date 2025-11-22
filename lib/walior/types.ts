@@ -68,6 +68,7 @@ export interface WaliorListItem {
     name: string;
     identityBlobId: string;
     owner: string;
+    imageUrl?: string;
 }
 
 export interface ChatMessage {
