@@ -29,11 +29,37 @@ export interface WalrusBlobIngestResult {
 type WalrusClient = ReturnType<typeof createWalrusClient>;
 
 export class WalrusRAGManager extends RAGManager {
+    /**
+     * Checks if a document with the given blobId already exists in the store.
+     */
+    async hasBlob(blobId: string): Promise<boolean> {
+        await this.initialize();
+        // Iterate through documents to check metadata
+        // RAGManager keeps documents in memory after load, so this is fast for small-medium datasets
+        // Ideally RAGManager should expose a more efficient query method
+        for (const doc of this.documents.values()) {
+            if (doc.metadata && 
+                typeof doc.metadata.walrus === 'object' && 
+                doc.metadata.walrus !== null &&
+                (doc.metadata.walrus as any).blobId === blobId
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     async ingestBlobById(
         client: WalrusClient,
         blobId: string,
         options?: WalrusIngestOptions
     ): Promise<string | null> {
+        // Optimization: Check if already exists before downloading
+        if (await this.hasBlob(blobId)) {
+            console.log(`[RAG] Blob ${blobId} already ingested. Skipping download.`);
+            return null; 
+        }
+
         const blob = await readWalrusBlob(client, blobId);
         const content = this.decodeBlob(blob);
         const metadata = this.buildWalrusMetadata('blob', { blobId }, options?.metadata);
@@ -168,4 +194,3 @@ export class WalrusRAGManager extends RAGManager {
         return base ? { ...base } : { ...extras };
     }
 }
-

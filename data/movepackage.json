@@ -1,0 +1,11 @@
+{
+    "tx_digest": "DxiuC8c4h85BXaGjLaTUYqUDbbdCi2yNmx1gVsVLfbRH",
+    "published_package_id": "0xc45a8919e65cdcfbd6b9d56aa6c32250ed02ee12026e0fc4f7898a06dab8a8af",
+    "created_objects": {
+      "0xc45a8919e65cdcfbd6b9d56aa6c32250ed02ee12026e0fc4f7898a06dab8a8af::waliors::WALiorAdminAuth": "0x5756de1b3d1c8a0cb2ceb3dc560d62ad339d1394caf59148b8250a0ab6d79650",
+      "0x2::display::Display<0xc45a8919e65cdcfbd6b9d56aa6c32250ed02ee12026e0fc4f7898a06dab8a8af::waliors::WALior>": "0x5803185b96ed74d0d1760d939d8614c0d544364c6ec910717929fd873551027f",
+      "0x2::package::UpgradeCap": "0x922c2e1b416e55b3eeea3bbf300c83769e850dbbdcf8a09817f26037890c1124",
+      "0x2::package::Publisher": "0xcd889f98d9b924b8e95cc956906bf13dd6ac57005af9882b6a0bd01d0d48044e",
+      "0xc45a8919e65cdcfbd6b9d56aa6c32250ed02ee12026e0fc4f7898a06dab8a8af::waliors::WALiorRegistry": "0xd49e50b0941f417167fbc1a168047362b494b2edf0a6e853d3a060ecc4aeb2d4"
+    }
+  }

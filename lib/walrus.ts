@@ -8,11 +8,23 @@ import type { UploadRelayConfig } from '@mysten/walrus';
 import { BlobReader } from '@mysten/walrus/dist/esm/files/readers/blob.js';
 import { QuiltReader } from '@mysten/walrus/dist/esm/files/readers/quilt.js';
 
-const OWNER = '0x8fe1368e8c8fad5d45f2470a4b05d66cdf08288872e4ba0654ffb8de123c0856';
+const OWNER = process.env.ADMIN_ADDRESS || '';
+const OWNER_PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY || '';
 
 export type Network = 'testnet' | 'mainnet';
 
-export const OWNER_KEYPAIR : Ed25519Keypair = Ed25519Keypair.fromSecretKey('suiprivkey1qp4dm5p4hcdsxzvcjhhngtm53rg3hpmm03ay0h3w39lynxe200quszem5cf');
+export let OWNER_KEYPAIR: Ed25519Keypair;
+try {
+    if (OWNER_PRIVATE_KEY) {
+        OWNER_KEYPAIR = Ed25519Keypair.fromSecretKey(OWNER_PRIVATE_KEY);
+    } else {
+        console.warn("ADMIN_PRIVATE_KEY is missing in environment variables (walrus.ts).");
+        OWNER_KEYPAIR = Ed25519Keypair.generate();
+    }
+} catch (e) {
+    console.error("Failed to create keypair from ADMIN_PRIVATE_KEY", e);
+    OWNER_KEYPAIR = Ed25519Keypair.generate();
+}
 
 const DEFAULT_UPLOAD_RELAY_HOSTS: Record<Network, string> = {
   testnet: 'https://upload-relay.testnet.walrus.space',
@@ -93,7 +105,7 @@ const PREFERRED_AGGREGATORS: Partial<Record<Network, string>> = {
 let lastResolvedNetwork: Network = 'testnet';
 
 const DEFAULT_UPLOAD_RELAY_TIP_MAX = 1_000;
-const DEFAULT_AGGREGATOR_TIMEOUT_MS = 5_000;
+const DEFAULT_AGGREGATOR_TIMEOUT_MS = 15_000;
 
 export interface WalrusClientConfig {
   network?: Network;
@@ -131,12 +143,6 @@ export interface WriteFilesResult {
     size: string;
     encoding_type: number;
   };
-}
-
-export interface QuiltPatchReadResult {
-  contents: Uint8Array;
-  identifier?: string;
-  tags?: Record<string, string>;
 }
 
 export interface QuiltPatchReadResult {
@@ -462,12 +468,15 @@ export async function writeWalrusFiles(
   client: ReturnType<typeof createWalrusClient>,
   options: WriteFilesOptions
 ): Promise<WriteFilesResult[]> {
-  return await client.walrus.writeFiles({
+  console.log('writeWalrusFiles input files:', options.files.length);
+  const result = await client.walrus.writeFiles({
     files: options.files,
     epochs: options.epochs,
     deletable: options.deletable,
     signer: options.signer,
   });
+  console.log('writeWalrusFiles result:', JSON.stringify(result, null, 2));
+  return result;
 }
 
 export async function writeWalrusFile(
@@ -613,7 +622,3 @@ export async function deleteWalrusBlob(
   console.log(digest);
   return { digest };
 }
-
-
-
-

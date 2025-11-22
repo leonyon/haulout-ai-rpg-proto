@@ -1,6 +1,6 @@
 import { SuiGraphQLClient } from '@mysten/sui/graphql';
 
-const OWNER = '0x8fe1368e8c8fad5d45f2470a4b05d66cdf08288872e4ba0654ffb8de123c0856';
+const OWNER = process.env.ADMIN_ADDRESS || '0x8fe1368e8c8fad5d45f2470a4b05d66cdf08288872e4ba0654ffb8de123c0856';
 
 export const graphqlClient = new SuiGraphQLClient({
     url: "https://graphql.testnet.sui.io/graphql"
@@ -85,10 +85,11 @@ export interface BlobObject {
     registeredEpoch: number;
 }
 
-export async function getAllBlobObjects(): Promise<BlobObject[]> {
+export async function getAllBlobObjects(ownerAddress?: string): Promise<BlobObject[]> {
+    const targetOwner = ownerAddress || OWNER;
     const query = `
     query {
-        objects (filter: { type: "0xd84704c17fc870b8764832c535aa6b11f21a95cd6f5bb38a9b07d2cf42220c66::blob::Blob", owner: "${OWNER}"}) {
+        objects (filter: { type: "0xd84704c17fc870b8764832c535aa6b11f21a95cd6f5bb38a9b07d2cf42220c66::blob::Blob", owner: "${targetOwner}"}) {
             nodes {
                 asMoveObject {
                     address
