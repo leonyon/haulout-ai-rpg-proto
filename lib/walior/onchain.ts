@@ -215,20 +215,17 @@ export async function getLatestWaliorSummary(waliorId: string): Promise<string |
             const optionObj = summaryOption as { fields: { vec: string[] } };
             if (optionObj.fields?.vec && Array.isArray(optionObj.fields.vec) && optionObj.fields.vec.length > 0) {
                 const val = optionObj.fields.vec[0];
-                console.log(`[OnChain Read] Found summary_blob_id (Case A): ${val}`);
                 return val;
             }
         }
         
         // Case B: Direct null or value (rare for Option in current RPC but possible)
         if (summaryOption === null) {
-             console.log('[OnChain Read] summary_blob_id is null (None).');
              return null;
         }
         
         // Case C: Direct string value (Flattened Option<String> where Some(x) -> x)
         if (typeof summaryOption === 'string') {
-             console.log(`[OnChain Read] Found summary_blob_id (Case C - Flattened): ${summaryOption}`);
              return summaryOption;
         }
 

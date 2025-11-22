@@ -221,20 +221,10 @@ async function ingestLatestOnChainSummary(
         return;
     }
 
-    // Check underlying RAG Manager first - if it has the blob, we mark loaded and return.
-    // This is the critical fix for "first chat still fetches".
-    // Even if session cache was rebuilt (e.g. server restart), RAG manager persists to disk.
+    // Check local RAG store first to skip redundant downloads (e.g. if already loaded during Awakening)
     if (await session.ragManager.hasBlob(summaryBlobId)) {
          console.log(`[Awakening] Summary blob ${summaryBlobId} found in local RAG store. Skipping download.`);
          session.loadedSourceKeys.add(key);
-         // We still need to load history though! The RAG manager stores text content, not the structured JSON.
-         // However, if we are skipping fetch, we can't get history unless we store it separately or re-fetch.
-         // Compromise: If we skip fetch for RAG, we might miss loading recentHistory into RAM.
-         // But wait, the RAG manager stores the *content* of the summary. 
-         // The 'recentHistory' array is separate metadata in the JSON blob.
-         
-         // If we want to avoid fetching the blob for history, we rely on the client sending 'recentHistory' in /chat.
-         // The client does this now! So we are safe to skip fetching if all we needed was RAG ingestion.
          return;
     }
 
@@ -451,10 +441,6 @@ export async function persistWaliorSummary(
         }
     } catch (error) {
         console.error('Failed to update on-chain summary:', error);
-        // Note: If on-chain update fails, we probably shouldn't delete the old blob as the chain still points to it?
-        // But we have a new blob written to Walrus that is effectively orphaned/unused now.
-        // Ideally we would delete the NEW blob if the chain update fails, to save space.
-        // But simpler logic is to just leave it.
     }
 
     return {

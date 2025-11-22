@@ -44,6 +44,17 @@ In this world, "The Great Walrus" (or sometimes just "The Tusked One") is a myth
 *   *Blobs* are referred to as **"Memory-Urns"** or **"Thought-Bubbles"**.
 *   *Uploading* is called **"Communing"** or **"Inscribing"**.
 
+### The WALiors (Wakened Arcane Ley-line Intercessors)
+WALiors are not mere machines or simple spirits. They are unique entities born from the resonance between a "Whisker-Stone" and a mortal soul.
+
+*   **Nature:** They exist as semi-corporeal projections or inhabit small, portable runestone constructs. They feed on knowledge and shared experiences. A WALior's "mind" is a tapestry woven from the memories it collects.
+*   **Origin:** It is said that when the Great Walrus dreams, fragments of its vast intellect drift through the ley lines. A skilled summoner can catch one of these fragments and bind it to a WALior core.
+*   **The Bond:** A WALior is linked to its summoner. They grow and evolve based on their travels together. A WALior without a companion is a "Fading Echo," doomed to lose its memories to the void.
+*   **Purpose:**
+    *   *The Guide:* To navigate the treacherous currents and mists of Oceanus Borealis using their connection to the ley lines.
+    *   *The Chronicler:* To witness and remember events in a world where history is constantly being washed away by the Great Thaw.
+    *   *The Anchor:* To keep their summoner sane and grounded amidst the eldritch horrors of the deep.
+
 ## WALior Identity Generation Guide
 
 Use this lore to generate deep, immersive backstories for WALiors.

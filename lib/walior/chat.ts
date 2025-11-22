@@ -188,25 +188,20 @@ export async function runWaliorChat(
         throw new Error('Message is required.');
     }
 
-    // Use skipChainSync: true to avoid re-fetching summary on every chat message
-    // We rely on the session state loaded during initialization (Awakening)
-    // This dramatically speeds up chat responses
-    // We also pass the known latestSummaryBlobId if available, to optimize session creation if cache missed
+    // Use skipChainSync: true to rely on cached session state for speed.
+    // If cache is missed, we use latestSummaryBlobId from client to optimize fetching.
     const session = await loadWaliorSession({
         waliorId: request.waliorId,
         identityBlobId: request.identityBlobId,
-        skipChainSync: true, // Optimization: Use local cache for chat loop
-        latestSummaryBlobId: request.latestSummaryBlobId // Optimization: Use known blob ID if cache missed
+        skipChainSync: true,
+        latestSummaryBlobId: request.latestSummaryBlobId
     });
 
-    // 1. Retrieve recent history from buffer OR from session if buffer empty
-    // If the client provided recentHistory (e.g. from state), use that to seed the buffer if empty
-    // This helps in case of server restart where session history is lost but client has it
+    // 1. Retrieve recent history from buffer (fastest) or request/session (fallback)
     let history = sessionHistoryBuffer.get(request.waliorId);
     if (!history) {
         if (request.recentHistory && request.recentHistory.length > 0) {
              history = request.recentHistory;
-             // Also update session.recentHistory so it's consistent
              session.recentHistory = history;
         } else {
              history = session.recentHistory || [];
@@ -248,9 +243,7 @@ export async function runWaliorChat(
         } else {
             console.log(`[Auto-Summary] Threshold reached (${history.length} msgs). Scheduling async summary for WALior ${request.waliorId}...`);
             
-            // ASYNC FIRE-AND-FORGET
-            // We do NOT await this promise, allowing the chat response to return immediately.
-            // The background process will handle summarization, Walrus upload, and on-chain update.
+            // ASYNC FIRE-AND-FORGET: Background summarization
             (async () => {
                 // Acquire lock
                 summaryLocks.add(request.waliorId);
@@ -272,11 +265,7 @@ export async function runWaliorChat(
                         const { blobId } = await persistWaliorSummary(request.waliorId, summaryInput);
                         console.log(`[Auto-Summary] Summary persisted to Walrus (Blob: ${blobId}) and On-Chain.`);
                         
-                        // Note: We need to be careful modifying the 'history' array here as it's a reference
-                        // held in sessionHistoryBuffer. However, since we are slicing it *after* 
-                        // this async block starts, we need to ensure thread safety effectively.
-                        // JavaScript is single-threaded, but concurrent requests could be an issue.
-                        // For now, we will simply slice it here.
+                        // Ensure thread safety when slicing the buffer after async op
                         const buffer = sessionHistoryBuffer.get(request.waliorId);
                         if (buffer && buffer.length >= SUMMARY_THRESHOLD * 2) {
                              // Keep last 2 messages for continuity

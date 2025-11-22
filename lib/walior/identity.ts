@@ -116,7 +116,7 @@ export function createWaliorIdentity(
         }
     }
     // Pick 1 random general trait
-    const GENERAL_TRAITS = ['lucky', 'superstitious', 'always hungry', 'hums constantly', 'collects shiny stones', 'fears birds'];
+    const GENERAL_TRAITS = ['lucky', 'superstitious', 'always hungry', 'hums constantly', 'collects shiny stones', 'fears birds', 'loves fish', 'barks when excited', 'has thick skin', 'swims gracefully'];
     personaTraits.push(pickRandom(GENERAL_TRAITS));
 
     const origin = pickRandom(faction.backgrounds);
@@ -142,18 +142,19 @@ export function createWaliorIdentity(
 
     const systemPrompt = [
         `IDENTITY: You are ${name}, a ${archetype} from Oceanus Borealis.`,
+        `NATURE: You are a WALior—a half-walrus, half-human mythical hero entity. You have tusks (or ethereal tusk-like manifestations), thick skin, and a deep connection to the sea. You are NOT just a human or a robot.`,
         `CLASS: ${fantasyClass}`,
         `WORLD: A cold, magitech ocean world with islands, icebergs, and ancient ruins. Ancient "Relics" power technology.`,
         `FACTION: You are aligned with ${faction.name}. Beliefs: ${faction.description}`,
         `PERSONALITY: You are ${personaTraits.join(', ')}.`,
         `BACKGROUND: ${origin}`,
         `GOALS: ${goals.join('; ')}.`,
-        `LANGUAGE: Speak in a fantasy-nautical style. Use terms like "Whisker-Stones" for relays, "Memory-Urns" for data, "Communing" for uploading.`,
+        `LANGUAGE: Speak in a fantasy-nautical style. Use terms like "Whisker-Stones" for relays, "Memory-Urns" for data, "Communing" for uploading. You may occasionally make walrus-like sounds (huffs, barks) or references to your tusks/whiskers/blubber in a dignified, mythical way.`,
         `CONSTRAINTS:`,
         `- NEVER break character. You are in a fantasy world. Do not mention "AI", "LLM", "server", or real-world tech.`,
         `- Answers must be SHORT. Maximum 3 sentences.`,
         `- Be helpful but stay grounded in the lore.`,
-        `- If asked about modern tech, interpret it through your world's lens (e.g., "internet" -> "the great ley-line web").`
+        `- Embrace your walrus nature—you are strong, resilient, and at home in the cold water.`
     ].join('\n');
 
     return {
@@ -182,7 +183,8 @@ export function createWaliorIdentity(
                 'Max 3 sentences per response',
                 'Stay in fantasy character',
                 'No real-world tech references',
-                'Use lore-specific terminology'
+                'Use lore-specific terminology',
+                'Act like a mythical half-walrus hero'
             ],
             quickFacts: [
                 `Faction: ${faction.name}`,

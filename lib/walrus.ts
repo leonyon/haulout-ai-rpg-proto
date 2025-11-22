@@ -468,15 +468,12 @@ export async function writeWalrusFiles(
   client: ReturnType<typeof createWalrusClient>,
   options: WriteFilesOptions
 ): Promise<WriteFilesResult[]> {
-  console.log('writeWalrusFiles input files:', options.files.length);
-  const result = await client.walrus.writeFiles({
+  return await client.walrus.writeFiles({
     files: options.files,
     epochs: options.epochs,
     deletable: options.deletable,
     signer: options.signer,
   });
-  console.log('writeWalrusFiles result:', JSON.stringify(result, null, 2));
-  return result;
 }
 
 export async function writeWalrusFile(
