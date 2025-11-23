@@ -8,7 +8,6 @@ import '@mysten/dapp-kit/dist/index.css';
 
 const { networkConfig } = createNetworkConfig({
     testnet: { url: getFullnodeUrl('testnet') },
-    mainnet: { url: getFullnodeUrl('mainnet') },
 });
 
 export function Providers({ children }: { children: React.ReactNode }) {
