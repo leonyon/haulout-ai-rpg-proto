@@ -322,7 +322,7 @@ export default function RagPlaygroundPage() {
                                         <p className="mt-3 text-black dark:text-zinc-100 whitespace-pre-wrap break-words">
                                             {result.document.content}
                                         </p>
-                                        {metadata.walrus && typeof metadata.walrus === 'object' && (
+                                        {!!metadata.walrus && typeof metadata.walrus === 'object' && (
                                             <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
                                                 Walrus Info: {JSON.stringify(metadata.walrus)}
                                             </p>

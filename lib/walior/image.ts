@@ -1,6 +1,5 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import sharp from 'sharp';
 import { createBasicWalrusClient, writeWalrusBlob, OWNER_KEYPAIR } from '@/lib/walrus';
 
 const AVATARS_DIR = path.join(process.cwd(), 'avatars');
@@ -36,6 +35,7 @@ export async function generateAndUploadWaliorImage(): Promise<string> {
     // Since they are pixel art likely, we might want to resize? 
     // Assuming the assets are prepared to be composited directly (same dimensions).
     
+    const sharp = (await import('sharp')).default;
     const compositeBuffer = await sharp(bgPath)
         .composite([{ input: waliorPath }])
         .png()

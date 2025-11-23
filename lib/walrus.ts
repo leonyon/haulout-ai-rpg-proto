@@ -5,8 +5,6 @@ import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { getFullnodeUrl } from '@mysten/sui/client';
 import { executeOwnerTransaction } from './transactions';
 import type { UploadRelayConfig } from '@mysten/walrus';
-import { BlobReader } from '@mysten/walrus/dist/esm/files/readers/blob.js';
-import { QuiltReader } from '@mysten/walrus/dist/esm/files/readers/quilt.js';
 
 const OWNER = process.env.ADMIN_ADDRESS || '';
 const OWNER_PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY || '';

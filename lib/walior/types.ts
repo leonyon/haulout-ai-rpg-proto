@@ -69,6 +69,16 @@ export interface WaliorListItem {
     identityBlobId: string;
     owner: string;
     imageUrl?: string;
+    // Enrichment fields
+    identitySummary?: {
+        archetype: string;
+        traits: string[];
+    };
+    rpgSummary?: {
+        runsCount: number;
+        bestFloor: number;
+        victories: number;
+    };
 }
 
 export interface ChatMessage {
@@ -101,4 +111,46 @@ export interface WaliorChatResponse {
         metadata: Record<string, unknown>;
     }>;
     summaryBlobId?: string;
+}
+
+// --- Master Index & RPG Types ---
+
+export interface WaliorIndex {
+    version: number;
+    chat: {
+        latestSummaryBlobId?: string;
+        lastUpdated: string;
+    };
+    rpg: {
+        activeGame?: {
+            blobId: string;
+            lastUpdated: string;
+        };
+        pastRuns: Array<{
+            blobId: string;
+            timestamp: string;
+            floor: number;
+            victory: boolean;
+        }>;
+    };
+}
+
+export interface GameChoice {
+    id: string;
+    text: string;
+    type: 'aggressive' | 'stealth' | 'diplomacy' | 'investigation' | 'magic';
+    requiredItem?: string;
+}
+
+export interface GameState {
+    floor: number;
+    health: number; // 0-100
+    maxHealth: number;
+    status: string; // e.g., "Healthy", "Injured"
+    activeEffects: string[]; // e.g. ["Bleeding", "Poisoned", "Enchanted", "Tired"]
+    inventory: string[];
+    isGameOver: boolean;
+    victory: boolean;
+    log: string[]; // Accumulate narrative history for the summary
+    currentChoices?: GameChoice[]; // Save the choices for resuming
 }

@@ -634,8 +634,7 @@ export default function WalrusTestPage() {
                       )}
                       {!quiltPatchStates[blob.blobId]?.error && (
                         <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded text-sm text-purple-900 dark:text-purple-200 space-y-2">
-                          {quiltPatchStates[blob.blobId]?.patches &&
-                          quiltPatchStates[blob.blobId]?.patches?.length > 0 ? (
+                          {(quiltPatchStates[blob.blobId]?.patches?.length ?? 0) > 0 ? (
                             <ul className="space-y-2">
                               {quiltPatchStates[blob.blobId]?.patches?.map((patch) => (
                                 <li key={patch.patchId} className="flex flex-col gap-1">

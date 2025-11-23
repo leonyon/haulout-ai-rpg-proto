@@ -2,6 +2,7 @@
 
 import { ConnectButton, useCurrentAccount } from '@mysten/dapp-kit';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Chat } from './components/Chat';
 
 interface Walior {
@@ -10,6 +11,16 @@ interface Walior {
     identityBlobId: string;
     owner: string;
     imageUrl?: string;
+    // Enrichment fields
+    identitySummary?: {
+        archetype: string;
+        traits: string[];
+    };
+    rpgSummary?: {
+        runsCount: number;
+        bestFloor: number;
+        victories: number;
+    };
 }
 
 export default function Home() {
@@ -49,6 +60,13 @@ export default function Home() {
 
     const handleMint = async () => {
         if (!account) return;
+        
+        // Check if user already has 4 or more WALiors
+        if (waliors.length >= 4) {
+            alert('You have reached the maximum limit of 4 WALiors.');
+            return;
+        }
+
         setMinting(true);
         setMintStatus('Initiating...');
         
@@ -130,7 +148,14 @@ export default function Home() {
             <div className="max-w-4xl mx-auto">
                 <header className="flex justify-between items-center mb-12">
                     <h1 className="text-3xl font-bold tracking-tight">WALiors AI RPG</h1>
-                    <ConnectButton />
+                    <div className="flex items-center gap-4">
+                        {account && (
+                            <Link href="/game" className="text-sm font-bold px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded hover:opacity-90 transition-opacity">
+                                The Sunken Spire (ALPHA) ➜
+                            </Link>
+                        )}
+                        <ConnectButton />
+                    </div>
                 </header>
 
                 {!account ? (
@@ -211,6 +236,20 @@ export default function Home() {
                                                     <span className="text-xs font-mono text-zinc-500 truncate w-full">
                                                         ID: {walior.objectId}
                                                     </span>
+
+                                                    {walior.identitySummary && (
+                                                        <div className="mt-2 text-xs text-zinc-400 space-y-1">
+                                                            <div className="text-blue-600 dark:text-blue-400 font-semibold">{walior.identitySummary.archetype}</div>
+                                                            <div className="italic truncate">{walior.identitySummary.traits.join(', ')}</div>
+                                                        </div>
+                                                    )}
+
+                                                    {walior.rpgSummary && (
+                                                        <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700 flex justify-between text-xs text-zinc-500 w-full">
+                                                            <span>Runs: {walior.rpgSummary.runsCount}</span>
+                                                            <span className="text-yellow-600 dark:text-yellow-500 font-medium">Best: F{walior.rpgSummary.bestFloor}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </button>
                                         ))}

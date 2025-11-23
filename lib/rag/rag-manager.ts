@@ -41,7 +41,7 @@ export class RAGManager {
 
     private vectorStore: Map<string, EmbeddingVector>;
 
-    private documents: Map<string, RAGDocument>;
+    protected documents: Map<string, RAGDocument>;
 
     private storeLoaded: boolean;
 
