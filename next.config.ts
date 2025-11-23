@@ -2,6 +2,7 @@ import path from 'node:path';
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ['@xenova/transformers', 'onnxruntime-web'],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -9,6 +10,23 @@ const nextConfig: NextConfig = {
         fs: false,
         path: false,
       };
+    }
+
+    if (Array.isArray(config.externals)) {
+      config.externals = config.externals.map((external) => {
+        if (typeof external !== 'function') {
+          return external;
+        }
+        return async (context, request, callback) => {
+          if (
+            typeof request === 'string' &&
+            (request === '@xenova/transformers' || request.startsWith('@xenova/transformers/'))
+          ) {
+            return callback();
+          }
+          return external(context, request, callback);
+        };
+      });
     }
 
     // Force WASM backend by routing native binding requests to our shim
