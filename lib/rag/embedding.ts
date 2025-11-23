@@ -7,6 +7,13 @@ env.useBrowserCache = false;
 if (process.env.VERCEL) {
     env.cacheDir = '/tmp/.transformers_cache';
 }
+// Ensure wasm assets are loaded from CDN since node_modules files are pruned in serverless bundles
+const WASM_CDN_BASE = `https://cdn.jsdelivr.net/npm/@xenova/transformers@${process.env.NEXT_PUBLIC_TRANSFORMERS_VERSION ?? '2.17.2'}/dist/`;
+if (env.backends?.onnx?.wasm) {
+    env.backends.onnx.wasm.wasmPaths = WASM_CDN_BASE;
+    // Limit threads when running in constrained environments to reduce startup time
+    env.backends.onnx.wasm.numThreads = 1;
+}
 
 export type EmbeddingVector = number[];
 
