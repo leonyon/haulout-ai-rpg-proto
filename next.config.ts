@@ -28,8 +28,8 @@ const nextConfig: NextConfig = {
   },
   // Turbopack configuration (empty for now - webpack handles WASM)
   turbopack: {},
-  // Ensure WASM files are not processed during SSR
-  serverExternalPackages: ['@mysten/walrus']
+  // Ensure WASM files and binary dependencies are not processed during SSR bundling
+  serverExternalPackages: ['@mysten/walrus', '@xenova/transformers', 'sharp', 'onnxruntime-node'],
 };
 
 export default nextConfig;

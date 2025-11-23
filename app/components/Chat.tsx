@@ -171,7 +171,7 @@ export function Chat({ waliorId, identityBlobId, name, imageUrl, onClose }: Chat
                             👾
                         </div>
                     )}
-                    <h2 className="text-lg font-semibold">{name}</h2>
+                <h2 className="text-lg font-semibold">{name}</h2>
                 </div>
                 <button 
                     onClick={handleClose}
