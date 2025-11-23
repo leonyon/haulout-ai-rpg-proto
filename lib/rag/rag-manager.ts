@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { EmbeddingManager, type EmbeddingVector } from './embedding';
+import { buildCachePath } from '@/lib/utils/cache-paths';
 
 export interface RAGDocumentMetadata {
     [key: string]: unknown;
@@ -46,7 +47,7 @@ export class RAGManager {
     private storeLoaded: boolean;
 
     constructor(options?: RAGManagerOptions) {
-        const defaultPath = path.join(process.cwd(), '.cache', 'rag', 'store.json');
+        const defaultPath = buildCachePath('rag', 'store.json');
         this.storagePath = options?.storagePath ?? defaultPath;
         this.embeddingManager = options?.embeddingManager ?? new EmbeddingManager();
         this.vectorStore = new Map<string, EmbeddingVector>();

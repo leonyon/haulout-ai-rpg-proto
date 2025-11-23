@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { TextDecoder } from 'node:util';
 import {
     createBasicWalrusClient,
@@ -12,6 +11,7 @@ import {
 } from '@/lib/walrus';
 import { WalrusRAGManager } from '@/lib/rag';
 import { getAllBlobObjects } from '@/lib/graphql';
+import { buildCachePath } from '@/lib/utils/cache-paths';
 import type {
     WaliorIdentity,
     WaliorMemorySource,
@@ -38,7 +38,7 @@ const sessionCache = globalForCache.waliorSessionCache || new Map<string, Walior
 if (process.env.NODE_ENV !== 'production') globalForCache.waliorSessionCache = sessionCache;
 
 function buildWaliorStorePath(waliorId: string): string {
-    return path.join(process.cwd(), '.cache', 'walior', 'rag', `${waliorId}.json`);
+    return buildCachePath('walior', 'rag', `${waliorId}.json`);
 }
 
 function decodeBlob(blob: Uint8Array): string {
