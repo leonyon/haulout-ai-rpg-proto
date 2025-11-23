@@ -18,6 +18,10 @@ export default function GamePage() {
     const [waliors, setWaliors] = useState<Walior[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedWalior, setSelectedWalior] = useState<Walior | null>(null);
+    const [ambientState, setAmbientState] = useState<{ gradient: string; glow?: string }>({
+        gradient: 'bg-gradient-to-b from-black via-zinc-950 to-black',
+        glow: '',
+    });
 
     const fetchWaliors = async () => {
         if (!account) return;
@@ -47,7 +51,13 @@ export default function GamePage() {
     }, [account]);
 
     return (
-        <main className="min-h-screen p-4 md:p-8 bg-black text-zinc-50 font-sans selection:bg-blue-500/30">
+        <main
+            className={`min-h-screen p-4 md:p-8 text-zinc-50 font-sans selection:bg-blue-500/30 transition-colors duration-1000 ${
+                selectedWalior
+                    ? ambientState.gradient
+                    : 'bg-gradient-to-b from-black via-zinc-950 to-black'
+            }`}
+        >
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <header className="flex flex-col md:flex-row justify-between items-center mb-8 md:mb-12 gap-4">
@@ -78,7 +88,11 @@ export default function GamePage() {
                                     identityBlobId={selectedWalior.identityBlobId}
                                     name={selectedWalior.name}
                                     imageUrl={selectedWalior.imageUrl}
-                                    onExit={() => setSelectedWalior(null)}
+                                    onExit={() => {
+                                        setSelectedWalior(null);
+                                        setAmbientState({ gradient: 'bg-gradient-to-b from-black via-zinc-950 to-black' });
+                                    }}
+                                    onAmbientUpdate={setAmbientState}
                                 />
                                 <div className="text-center text-xs text-zinc-500 mt-6 space-y-1 max-w-2xl mx-auto opacity-70 hover:opacity-100 transition-opacity">
                                     <p className="font-semibold text-blue-500">This is a prototype.</p>

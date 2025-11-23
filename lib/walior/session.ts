@@ -274,6 +274,10 @@ export async function loadWaliorSession(options: LoadWaliorSessionOptions): Prom
     return state;
 }
 
+export function invalidateWaliorSession(waliorId: string): void {
+    sessionCache.delete(waliorId);
+}
+
 // --- Persistence Helpers ---
 
 function getOrCreateIndex(session: WaliorSessionState): WaliorIndex {

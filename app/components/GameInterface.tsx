@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { GameState, GameTurnResponse, GameChoice } from '@/lib/game/types';
 
 import ReactMarkdown from 'react-markdown';
@@ -12,14 +12,16 @@ interface GameInterfaceProps {
     name: string;
     imageUrl?: string;
     onExit: () => void;
+    onAmbientUpdate?: (ambient: { gradient: string; glow?: string }) => void;
 }
 
-export function GameInterface({ waliorId, identityBlobId, name, imageUrl, onExit }: GameInterfaceProps) {
+export function GameInterface({ waliorId, identityBlobId, name, imageUrl, onExit, onAmbientUpdate }: GameInterfaceProps) {
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [currentNarrative, setCurrentNarrative] = useState<string>('');
     const [choices, setChoices] = useState<GameChoice[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const loadedRef = useRef<string | null>(null);
 
@@ -92,18 +94,76 @@ export function GameInterface({ waliorId, identityBlobId, name, imageUrl, onExit
         }
     };
 
+    const ambientMood = useMemo(() => {
+        if (!gameState) {
+            return {
+                gradient: 'bg-gradient-to-b from-black via-zinc-950 to-black',
+                glow: '',
+            };
+        }
+
+        const dangerLevel = gameState.health / gameState.maxHealth;
+        const floorProgress = gameState.floor / 15;
+
+        if (gameState.isGameOver && !gameState.victory) {
+            return {
+                gradient: 'bg-gradient-to-b from-black via-red-950/80 to-black',
+                glow: 'after:content-[""] after:absolute after:inset-0 after:bg-red-600/5 after:blur-3xl',
+            };
+        }
+
+        if (gameState.victory) {
+            return {
+                gradient: 'bg-gradient-to-b from-black via-amber-950/70 to-black',
+                glow: 'after:content-[""] after:absolute after:inset-0 after:bg-amber-500/10 after:blur-3xl',
+            };
+        }
+
+        if (dangerLevel < 0.3) {
+            return {
+                gradient: 'bg-gradient-to-b from-black via-red-950/60 to-zinc-950',
+                glow: 'after:content-[""] after:absolute after:inset-0 after:bg-red-800/10 after:blur-2xl',
+            };
+        }
+
+        if (floorProgress > 0.6) {
+            return {
+                gradient: 'bg-gradient-to-b from-black via-purple-950/70 to-black',
+                glow: 'after:content-[""] after:absolute after:inset-0 after:bg-purple-500/10 after:blur-3xl',
+            };
+        }
+
+        return {
+            gradient: 'bg-gradient-to-b from-black via-blue-950/60 to-black',
+            glow: 'after:content-[""] after:absolute after:inset-0 after:bg-blue-500/5 after:blur-2xl',
+        };
+    }, [gameState]);
+
+    useEffect(() => {
+        if (onAmbientUpdate) {
+            onAmbientUpdate(ambientMood);
+        }
+    }, [ambientMood, onAmbientUpdate]);
+
     const handleSaveAndExit = async () => {
         if (!gameState) return;
         setSaving(true);
         try {
             // If game over, archive the run. If active, just save state.
             const endpoint = gameState.isGameOver ? '/api/game/end' : '/api/game/save';
-            
-            await fetch(endpoint, {
+            setSaveStatus(gameState.isGameOver ? 'Uploading final chronicle...' : 'Preserving run progress...');
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ waliorId, gameState }),
             });
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.error || 'Failed to persist game state.');
+            }
+            setSaveStatus('Saved to Walrus & registry.');
+            setTimeout(() => setSaveStatus(null), 2000);
             onExit();
         } catch (e) {
             console.error(e);
@@ -126,7 +186,9 @@ export function GameInterface({ waliorId, identityBlobId, name, imageUrl, onExit
     if (!gameState) return null;
 
     return (
-        <div className="flex flex-col h-screen max-h-[800px] bg-zinc-900 text-zinc-100 rounded-lg overflow-hidden border border-zinc-800 shadow-2xl font-serif">
+        <div className={`relative h-screen max-h-[800px] text-zinc-100 rounded-lg overflow-hidden border border-zinc-800 shadow-2xl font-serif ${ambientMood.gradient}`}>
+            {ambientMood.glow && <div className={`${ambientMood.glow} pointer-events-none z-0`}></div>}
+            <div className="relative z-10 flex flex-col h-full">
             {/* Header */}
             <div className="flex items-center justify-between p-4 bg-zinc-950 border-b border-zinc-800">
                 <div className="flex items-center gap-3">
@@ -146,13 +208,21 @@ export function GameInterface({ waliorId, identityBlobId, name, imageUrl, onExit
                         </div>
                     </div>
                 </div>
-                <button 
-                    onClick={handleSaveAndExit}
-                    disabled={saving}
-                    className="text-xs text-zinc-500 hover:text-zinc-300 px-3 py-1 border border-zinc-800 rounded hover:bg-zinc-800 transition-colors"
-                >
-                    {saving ? 'Saving...' : 'Save & Exit'}
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                    <button 
+                        onClick={handleSaveAndExit}
+                        disabled={saving}
+                        className="text-xs text-zinc-500 hover:text-zinc-300 px-3 py-1 border border-zinc-800 rounded hover:bg-zinc-800 transition-colors flex items-center gap-2 disabled:opacity-60"
+                    >
+                        {saving && <span className="h-3 w-3 border border-current border-t-transparent rounded-full animate-spin" />}
+                        {saving ? 'Saving...' : 'Save & Exit'}
+                    </button>
+                    {(saving || saveStatus) && (
+                        <span className="text-[11px] text-zinc-500">
+                            {saveStatus || 'Preparing legend...'}
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* Main Content Area */}
@@ -284,6 +354,7 @@ export function GameInterface({ waliorId, identityBlobId, name, imageUrl, onExit
                         </div>
                     </div>
                 )}
+            </div>
             </div>
         </div>
     );

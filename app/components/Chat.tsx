@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface ChatProps {
     waliorId: string;
@@ -21,8 +21,22 @@ export function Chat({ waliorId, identityBlobId, name, imageUrl, onClose }: Chat
     const [loading, setLoading] = useState(false);
     const [initializing, setInitializing] = useState(true);
     const [latestSummaryBlobId, setLatestSummaryBlobId] = useState<string | undefined>(undefined);
+    const [hasUnsavedMessages, setHasUnsavedMessages] = useState(false);
+    const [savingAndClosing, setSavingAndClosing] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const [saveStatusMessage, setSaveStatusMessage] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const initRef = useRef<string | null>(null);
+    const hasUnsavedMessagesRef = useRef(false);
+    const skipCleanupFlushRef = useRef(false);
+
+    const updateUnsavedState = useCallback((value: boolean) => {
+        hasUnsavedMessagesRef.current = value;
+        if (value) {
+            skipCleanupFlushRef.current = false;
+        }
+        setHasUnsavedMessages(value);
+    }, []);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,26 +94,70 @@ export function Chat({ waliorId, identityBlobId, name, imageUrl, onClose }: Chat
     // We use a ref to keep the latest flush logic without re-triggering useEffect
     const flushSessionRef = useRef(() => {});
 
-    useEffect(() => {
-        flushSessionRef.current = async () => {
-            // Use sendBeacon for page unload if possible, or fetch keepalive
-            const payload = JSON.stringify({ waliorId });
-            const blob = new Blob([payload], { type: 'application/json' });
-            
-            // Try navigator.sendBeacon first for reliability on unload
+    const flushSession = useCallback(async ({ waitForCompletion = false }: { waitForCompletion?: boolean } = {}) => {
+        if (!hasUnsavedMessagesRef.current) {
+            return true;
+        }
+
+        const historyPayload = messages.slice(-20); // limit payload size
+        const payload = JSON.stringify({ waliorId, history: historyPayload });
+
+        if (waitForCompletion) {
+            try {
+                setSaveStatusMessage('Generating summary...');
+                const response = await fetch('/api/walior/summary', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to save summary.');
+                }
+
+                setSaveStatusMessage('Uploading to Walrus & Registry...');
+                const data = await response.json().catch(() => ({}));
+                if (typeof data.summaryBlobId === 'string') {
+                    setLatestSummaryBlobId(data.summaryBlobId);
+                }
+                updateUnsavedState(false);
+                skipCleanupFlushRef.current = true;
+                setSaveStatusMessage('Summary saved!');
+                setTimeout(() => setSaveStatusMessage(null), 2000);
+                return true;
+            } catch (error) {
+                console.error('Flush error:', error);
+                setSaveError(error instanceof Error ? error.message : 'Failed to save summary.');
+                setSaveStatusMessage(null);
+                return false;
+            }
+        }
+
+        try {
+                    const blob = new Blob([payload], { type: 'application/json' });
             if (navigator.sendBeacon) {
                 navigator.sendBeacon('/api/walior/summary', blob);
             } else {
-                // Fallback to fetch
                 fetch('/api/walior/summary', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: payload,
                     keepalive: true
-                }).catch(e => console.error('Flush error', e));
+                }).catch(err => console.error('Flush fallback error', err));
             }
+        } catch (err) {
+            console.error('Flush send error', err);
+        }
+
+        return true;
+    }, [waliorId, messages, updateUnsavedState]);
+
+    useEffect(() => {
+        flushSessionRef.current = () => {
+            flushSession({ waitForCompletion: false });
         };
-    }, [waliorId]);
+    }, [flushSession]);
 
     useEffect(() => {
         const handleBeforeUnload = () => {
@@ -110,13 +168,21 @@ export function Chat({ waliorId, identityBlobId, name, imageUrl, onClose }: Chat
         return () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
             // Also flush when component unmounts (e.g. user clicks Close button)
-            flushSessionRef.current();
+            if (!skipCleanupFlushRef.current) {
+                flushSessionRef.current();
+            }
         };
     }, []);
 
-    const handleClose = () => {
-        // Explicitly call onClose, the useEffect cleanup will handle the flush
-        onClose();
+    const handleClose = async () => {
+        if (savingAndClosing) return;
+        setSaveError(null);
+        setSavingAndClosing(true);
+        const success = await flushSession({ waitForCompletion: true });
+        setSavingAndClosing(false);
+        if (success) {
+            onClose();
+        }
     };
 
     const sendMessage = async () => {
@@ -124,7 +190,8 @@ export function Chat({ waliorId, identityBlobId, name, imageUrl, onClose }: Chat
 
         const userMessage = input.trim();
         setInput('');
-        setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+            setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+            updateUnsavedState(true);
         setLoading(true);
 
         try {
@@ -148,6 +215,7 @@ export function Chat({ waliorId, identityBlobId, name, imageUrl, onClose }: Chat
 
             const data = await response.json();
             setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
+            updateUnsavedState(true);
         } catch (error) {
             console.error('Chat error:', error);
             setMessages(prev => [...prev, { role: 'assistant', content: 'Error: Could not reach the WALior.' }]);
@@ -173,12 +241,23 @@ export function Chat({ waliorId, identityBlobId, name, imageUrl, onClose }: Chat
                     )}
                 <h2 className="text-lg font-semibold">{name}</h2>
                 </div>
-                <button 
-                    onClick={handleClose}
-                    className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-                >
-                    Close
-                </button>
+                <div className="flex flex-col items-end">
+                    <button 
+                        onClick={handleClose}
+                        disabled={savingAndClosing}
+                        className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 disabled:opacity-50 flex items-center gap-2"
+                    >
+                        {savingAndClosing && (
+                            <span className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        )}
+                        {savingAndClosing ? 'Saving...' : 'Save & Close'}
+                    </button>
+                    {(savingAndClosing || saveStatusMessage) && (
+                        <span className="text-[11px] text-zinc-400 mt-1">
+                            {saveStatusMessage || 'Preparing memory...'}
+                        </span>
+                    )}
+                </div>
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -223,6 +302,11 @@ export function Chat({ waliorId, identityBlobId, name, imageUrl, onClose }: Chat
             </div>
 
             <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
+                {saveError && (
+                    <div className="text-sm text-red-500 mb-2">
+                        {saveError}
+                    </div>
+                )}
                 <div className="flex gap-2">
                     <input
                         type="text"

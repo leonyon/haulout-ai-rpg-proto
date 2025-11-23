@@ -1,4 +1,4 @@
-import { loadWaliorSession, persistWaliorSummary } from './session';
+import { loadWaliorSession, persistWaliorSummary, invalidateWaliorSession } from './session';
 import type {
     WaliorChatRequest,
     WaliorChatResponse,
@@ -13,6 +13,25 @@ import type { RAGSearchResult } from '@/lib/rag';
 const sessionHistoryBuffer = new Map<string, Array<ChatMessage>>();
 const SUMMARY_THRESHOLD = 10; // Raised threshold to 10 exchanges (20 messages)
 const summaryLocks = new Set<string>(); // Key: waliorId
+
+function sanitizeHistory(history: Array<ChatMessage>): Array<ChatMessage> {
+    const filtered = history.filter(
+        (msg) =>
+            !!msg &&
+            typeof msg.content === 'string' &&
+            (msg.role === 'user' || msg.role === 'assistant') &&
+            msg.content.trim().length > 0
+    ).map((msg) => ({
+        role: msg.role,
+        content: msg.content.trim(),
+    }));
+
+    while (filtered.length > 0 && filtered[filtered.length - 1].role === 'user') {
+        filtered.pop();
+    }
+
+    return filtered;
+}
 
 function buildSystemPrompt(identity: WaliorIdentity): string {
     const lines: string[] = [];
@@ -134,13 +153,24 @@ async function generateSummary(
     return payload?.choices?.[0]?.message?.content || '';
 }
 
-export async function flushSessionSummary(waliorId: string): Promise<string | null> {
+export async function flushSessionSummary(
+    waliorId: string,
+    historyOverride?: Array<ChatMessage>
+): Promise<{ blobId: string; summary: string } | null> {
     if (summaryLocks.has(waliorId)) {
         console.log(`[Manual-Summary] Skipped: Summary for WALior ${waliorId} is already in progress.`);
         return null;
     }
 
-    const history = sessionHistoryBuffer.get(waliorId) || [];
+    let history = sessionHistoryBuffer.get(waliorId) || [];
+    if ((!history || history.length === 0) && historyOverride && historyOverride.length > 0) {
+        history = historyOverride.slice();
+        sessionHistoryBuffer.set(waliorId, history);
+    }
+
+    history = sanitizeHistory(history);
+    sessionHistoryBuffer.set(waliorId, history);
+
     if (history.length === 0) {
         return null;
     }
@@ -154,7 +184,7 @@ export async function flushSessionSummary(waliorId: string): Promise<string | nu
         const summaryContent = await generateSummary(history, model);
         // Keep last 10 messages for history persistence
         // If history is longer than 10, take the last 10
-        const historyToPersist = history.slice(-10);
+        const historyToPersist = sanitizeHistory(history).slice(-10);
 
         if (summaryContent) {
             console.log(`[Manual-Summary] Generated summary: "${summaryContent.substring(0, 50)}..."`);
@@ -168,9 +198,10 @@ export async function flushSessionSummary(waliorId: string): Promise<string | nu
             const { blobId } = await persistWaliorSummary(waliorId, summaryInput);
             console.log(`[Manual-Summary] Summary & History persisted to Walrus (Blob: ${blobId}) and On-Chain.`);
             
-            // Clear buffer completely on explicit flush
+            // Clear buffer completely and invalidate cached session so next load pulls fresh data
             sessionHistoryBuffer.delete(waliorId);
-            return blobId;
+            invalidateWaliorSession(waliorId);
+            return { blobId, summary: summaryContent };
         }
     } catch (err) {
         console.error('Failed to flush session summary:', err);
@@ -193,7 +224,7 @@ export async function runWaliorChat(
     const session = await loadWaliorSession({
         waliorId: request.waliorId,
         identityBlobId: request.identityBlobId,
-        skipChainSync: true,
+        skipChainSync: false,
         latestSummaryBlobId: request.latestSummaryBlobId
     });
 
@@ -248,12 +279,16 @@ export async function runWaliorChat(
                 // Acquire lock
                 summaryLocks.add(request.waliorId);
                 try {
-                    const summaryContent = await generateSummary(history, model);
+                    const normalizedHistory = sanitizeHistory(history);
+                    if (normalizedHistory.length === 0) {
+                        return;
+                    }
+                    const summaryContent = await generateSummary(normalizedHistory, model);
                     if (summaryContent) {
                         console.log(`[Auto-Summary] Generated summary: "${summaryContent.substring(0, 50)}..."`);
                         
                         // Save last 10 messages alongside summary
-                        const historyToPersist = history.slice(-10);
+                        const historyToPersist = normalizedHistory.slice(-10);
 
                         const summaryInput: WaliorSessionSummaryInput = {
                             label: `Chat Summary - ${new Date().toISOString()}`,
