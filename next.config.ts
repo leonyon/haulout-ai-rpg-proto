@@ -2,6 +2,7 @@ import path from 'node:path';
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: __dirname,
   transpilePackages: ['@xenova/transformers', 'onnxruntime-web'],
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -12,28 +13,15 @@ const nextConfig: NextConfig = {
       };
     }
 
-    if (Array.isArray(config.externals)) {
-      config.externals = config.externals.map((external) => {
-        if (typeof external !== 'function') {
-          return external;
-        }
-        return async (context, request, callback) => {
-          if (
-            typeof request === 'string' &&
-            (request === '@xenova/transformers' || request.startsWith('@xenova/transformers/'))
-          ) {
-            return callback();
-          }
-          return external(context, request, callback);
-        };
-      });
-    }
-
     // Force WASM backend by routing native binding requests to our shim
     const onnxShimPath = path.resolve(__dirname, 'lib/shims/onnxruntime-node.ts');
+    const xenovaBackendShim = path.resolve(__dirname, 'lib/shims/xenova-backend-onnx.ts');
+    const xenovaImageShim = path.resolve(__dirname, 'lib/shims/xenova-image.ts');
     config.resolve.alias = {
       ...config.resolve.alias,
       'onnxruntime-node': onnxShimPath,
+      '@xenova/transformers/src/backends/onnx.js': xenovaBackendShim,
+      '@xenova/transformers/src/utils/image.js': xenovaImageShim,
     };
     
     config.experiments = {
