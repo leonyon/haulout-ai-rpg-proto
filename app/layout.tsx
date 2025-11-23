@@ -16,6 +16,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "WALiors AI RPG",
   description: "AI Companion RPG game on Sui",
+  icons: {
+    icon: "/walior.ico",
+    shortcut: "/walior.ico",
+  },
 };
 
 export default function RootLayout({
