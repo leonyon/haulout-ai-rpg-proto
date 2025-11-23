@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -9,6 +10,13 @@ const nextConfig: NextConfig = {
         path: false,
       };
     }
+
+    // Force WASM backend by routing native binding requests to our shim
+    const onnxShimPath = path.resolve(__dirname, 'lib/shims/onnxruntime-node.ts');
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'onnxruntime-node': onnxShimPath,
+    };
     
     config.experiments = {
       ...config.experiments,
@@ -29,7 +37,8 @@ const nextConfig: NextConfig = {
   // Turbopack configuration (empty for now - webpack handles WASM)
   turbopack: {},
   // Ensure WASM files and binary dependencies are not processed during SSR bundling
-  serverExternalPackages: ['@mysten/walrus', '@xenova/transformers', 'sharp', 'onnxruntime-node'],
+  // Removed @xenova/transformers and onnxruntime-node to allow webpack alias to strip native bindings
+  serverExternalPackages: ['@mysten/walrus', 'sharp'],
 };
 
 export default nextConfig;
