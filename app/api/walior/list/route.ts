@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchWaliorObjects, getLatestWaliorSummary } from '@/lib/walior';
+import { fetchWaliorObjects, getLatestWaliorSummary } from '@/lib/walior/onchain';
 import { createBasicWalrusClient, readWalrusBlob, listQuiltPatches, readWalrusQuiltPatch } from '@/lib/walrus';
 import { WaliorIdentity, WaliorIndex, WaliorListItem } from '@/lib/walior/types';
 import { TextDecoder } from 'util';
