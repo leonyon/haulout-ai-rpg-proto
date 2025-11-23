@@ -1,4 +1,12 @@
-import { pipeline } from '@xenova/transformers';
+import { pipeline, env } from '@xenova/transformers';
+
+// Configuration for Vercel / Serverless environments
+env.allowLocalModels = false;
+env.useBrowserCache = false;
+// On Vercel, only /tmp is writable
+if (process.env.VERCEL) {
+    env.cacheDir = '/tmp/.transformers_cache';
+}
 
 export type EmbeddingVector = number[];
 
